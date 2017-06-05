@@ -1,9 +1,119 @@
 /* eslint-env browser, es6 */
-
-(function initJawe () {
+window.chainloadr("Markdot from ./markdot/markdot.js").then((Markdot) => {
 	"use strict"
 
-	console.info("initJawe!")
+	console.info("Markdot", Markdot)
+
+	const COLOUR_PRIMARY = "darkorange"
+		, COLOUR_SECONDARY = "#ffbf71"
+		, css = `
+		:host {
+			display: table;
+		}
+
+		* {
+			padding: 0;
+			margin: 0;
+			box-sizing: border-box;
+		}
+
+		textarea, div {
+			display: table-cell;
+			position: absolute;
+
+			height: 100%;
+			width: 100%;
+			font-family: sans-serif;
+			font-size: 1em;
+			padding: 0.8em 0.8em;
+			background: none;
+			overflow-y: scroll;
+			overflow-x: hidden;
+
+			white-space: pre-wrap;
+			word-wrap: break-word;
+
+			transition: all 0.2s;
+		}
+
+		div {
+			color: #333;
+		}
+
+		div::after {
+			content: "EOF";
+			font-size: 0;
+		}
+
+		/* syntax */
+
+		div span {
+			display: inline-block;
+		}
+
+		div span * {
+			font-weight: inherit;
+			font-size: inherit;
+		}
+
+		div span h1 {
+			color: ${COLOUR_PRIMARY};
+			text-shadow: ${COLOUR_PRIMARY} 0px 0px;
+		}
+
+		div span strong {
+			text-shadow: black 0px 0px;
+		}
+
+		div span em::before, div span em::after,
+		div span strong::before, div span strong::after {
+			color: silver;
+		}
+
+
+		div span em::before, div span em::after {
+			content: "**"
+		}
+
+		div span strong::before, div span strong::after {
+			content: "*";
+		}
+
+		/* text area formatting */
+
+		textarea {
+			border: none;
+			resize: none;
+			z-index: 2;
+
+			color: ${COLOUR_PRIMARY};
+			-webkit-text-fill-color: transparent;
+		}
+
+		textarea::-webkit-input-placeholder {
+			color: #ccc;
+			text-shadow: none;
+			-webkit-text-fill-color: initial;
+		}
+
+		textarea:not(:focus) ~ div {
+			opacity: 0.5;
+			background: whitesmoke;
+		}
+
+		textarea:focus {
+			outline: none;
+			/*outline: ${COLOUR_SECONDARY} solid 2px;*/
+		}
+
+		textarea::selection {
+			background: ${COLOUR_SECONDARY};
+		}
+
+		textarea::-moz-selection {
+			background: ${COLOUR_SECONDARY};
+		}
+	`
 
 	customElements.define("x-jawe", class jawe extends HTMLElement {
 
@@ -18,29 +128,36 @@
 
 			console.info("x-jawe constructed")
 
-			const shadowRoot = this.attachShadow({"mode": "open"})
+			const $shadowRoot = this.attachShadow({"mode": "open"})
 
-			shadowRoot.innerHTML = `
-				<style>:host { ... }</style>
+			$shadowRoot.innerHTML = `
+				<style>${css}</style>
 			`
 
 			this.$textarea = document.createElement("textarea")
 			this.$print = document.createElement("div")
 
-			shadowRoot.appendChild(this.$textarea)
-			shadowRoot.appendChild(this.$print)
-			// ta.value = this.dataset.document
+			$shadowRoot.appendChild(this.$textarea)
+			$shadowRoot.appendChild(this.$print)
 
 			this.dataset.initial = this.innerHTML.trim()
 			this.innerHTML = ""
 
-			this.$textarea.addEventListener("input", (event) => {
-				console.log(event)
-				this.dataset.document = this.$textarea.value
+			this.$textarea.addEventListener("input", () => {
+				this.dataset.document = encodeURIComponent(this.$textarea.value)
 			})
 
-			this.addEventListener("click", (event) => {
-				console.info("event", event)
+			this.$textarea.addEventListener("focus", () => {
+				this.$textarea.setAttribute("spellcheck", "true")
+			})
+
+			this.$textarea.addEventListener("blur", () => {
+				this.$textarea.setAttribute("spellcheck", "false")
+			})
+
+			// link scroll
+			this.$textarea.addEventListener("scroll", () => {
+				this.$print.scrollTop = this.$textarea.scrollTop
 			})
 		}
 
@@ -80,8 +197,10 @@
 
 			switch (attrName) {
 				case "data-document": {
-					this.$textarea.value = newVal
-					this.$print.innerHTML = newVal
+					const decoded = decodeURIComponent(newVal)
+
+					this.$textarea.value = decoded
+					this.$print.innerHTML = new Markdot(decoded).output
 
 					break
 				}
@@ -102,4 +221,4 @@
 			console.log("adoptedCallback")
 		}
 	})
-}())
+})
