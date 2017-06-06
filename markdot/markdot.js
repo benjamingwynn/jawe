@@ -3,12 +3,28 @@
 (function initMarkdot () {
 	"use strict"
 
+	const PUNCTUATION = [".", "!", "?", "\"", ":", ";", "'", ")", "]"]
+
 	function stringContains (str, contains) {
 		return str.indexOf(str) > -1
 	}
 
 	function replaceAll (str, replaceThis, withThis) {
 		return str.split(replaceThis).join(withThis)
+	}
+
+	function doesStringEndInPunctuation (str) {
+		const nPunc = PUNCTUATION.length
+
+		let puncI
+
+		for (puncI = 0; puncI < nPunc; puncI += 1) {
+			if (str.trim().lastIndexOf(PUNCTUATION[puncI]) === str.trim().length - 1) {
+				return true
+			}
+		}
+
+		return false
 	}
 
 	function wrapInHtmlTag (str, tag) {
@@ -68,7 +84,7 @@
 			if (!nextLine && lineNumber !== nLines - 1) {
 				console.log("next line is blank!")
 				// if this line does not end in a full stop
-				if (line.trim().lastIndexOf(".") !== line.trim().length - 1) {
+				if (!doesStringEndInPunctuation(line)) {
 					console.log("this line does not end in a full stop")
 
 					return wrapInHtmlTag(headify(line), "span")

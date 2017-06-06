@@ -4,6 +4,8 @@
 		<title>Just Another Web Editor</title>
 		<script data-chainloadr="./index.js" src="https://rawgit.com/benjamingwynn/chainloadr.js/master/bundle.js" async></script>
 		<link rel="stylesheet" href="./index.css" />
+		<link href="https://fonts.googleapis.com/css?family=Crete+Round" rel="stylesheet" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	</head>
 	<body>
 		<x-jawe>
@@ -12,9 +14,13 @@ JAWE
 
 Just Another Web Editor
 
-JAWE works by using custom elements to overlay a div element atop of a textarea element, then uses syntax highlighting. This allows JAWE to use the browsers built in spell check.
+JAWE works by using custom elements to overlay a div element atop of a textarea element, then uses Markdot 0.2 syntax highlighting. This allows JAWE to use the browsers built in spell check.
 
-Because JAWE uses custom elements and some other experimental features, it requires a very recent version of Chrome.
+Because JAWE uses custom elements and some other new features, it requires a very recent version of Chrome to function. Pollyfills will be provided in the final version of JAWE. JAWE superseeds Virtuoso (http://github.com/benjamingwynn/virtuoso)
+
+Right now JAWE only supports one current document, and stores said document in localStorage. In the future multiple document support is planned. To empty the document and return to this default, do the following in the console:
+
+localStorage.clear()
 
 Written by Benjamin Gwynn - xenxier@xenxier.com
 

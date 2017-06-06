@@ -4,26 +4,57 @@ window.chainloadr("Markdot from ./markdot/markdot.js").then((Markdot) => {
 
 	console.info("Markdot", Markdot)
 
-	const COLOUR_PRIMARY = "darkorange"
-		, COLOUR_SECONDARY = "#ffbf71"
+	const COLOUR_PRIMARY = "sienna"
+		, COLOUR_SECONDARY = "orange"
+		, HEADER_SIZE = 3
 		, css = `
 		:host {
+			height: 100%;
+		}
+
+		header {
+			font-weight: bold;
+			background: #eee;
+			color: #444;
+			font-size: ${HEADER_SIZE * 0.5}em;
+			height: 2em;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			padding: 0 0.3em;
+
+			word-break: break-all;
+			word-wrap: break-word;
+			white-space: pre;
+			text-overflow: ellipsis;
+			overflow: hidden;
+		}
+
+		header.empty::before {
+			content: "Untitled";
+			font-style: italic;
+		}
+
+		main {
 			display: table;
+			width: 100%;
+			height: calc(100% - ${HEADER_SIZE}em);
+			margin: auto;
 		}
 
 		* {
 			padding: 0;
 			margin: 0;
 			box-sizing: border-box;
+			font-family: 'Crete Round', serif;
 		}
 
 		textarea, div {
 			display: table-cell;
 			position: absolute;
 
-			height: 100%;
-			width: 100%;
-			font-family: sans-serif;
+			height: inherit;
+			width: inherit;
 			font-size: 1em;
 			padding: 0.8em 0.8em;
 			background: none;
@@ -41,8 +72,10 @@ window.chainloadr("Markdot from ./markdot/markdot.js").then((Markdot) => {
 		}
 
 		div::after {
+			transition: 0.3s all;
 			content: "EOF";
 			font-size: 0;
+			color: transparent;
 		}
 
 		/* syntax */
@@ -88,6 +121,20 @@ window.chainloadr("Markdot from ./markdot/markdot.js").then((Markdot) => {
 
 			color: ${COLOUR_PRIMARY};
 			-webkit-text-fill-color: transparent;
+			transition: color 0.2s;
+
+			box-shadow: inset #ddd -22px 5px 10px 0px;
+		}
+
+		textarea.saved {
+			color: skyblue;
+		}
+
+		textarea.saved + div::after {
+			content: "Saved";
+			font-size: 0.5em;
+			color: skyblue;
+			padding-left: 0.5em;
 		}
 
 		textarea::-webkit-input-placeholder {
@@ -129,22 +176,27 @@ window.chainloadr("Markdot from ./markdot/markdot.js").then((Markdot) => {
 			console.info("x-jawe constructed")
 
 			const $shadowRoot = this.attachShadow({"mode": "open"})
+				, $main = document.createElement("main")
 
 			$shadowRoot.innerHTML = `
 				<style>${css}</style>
 			`
 
+			this.$header = document.createElement("header")
 			this.$textarea = document.createElement("textarea")
 			this.$print = document.createElement("div")
 
-			$shadowRoot.appendChild(this.$textarea)
-			$shadowRoot.appendChild(this.$print)
+			$shadowRoot.appendChild(this.$header)
+			$main.appendChild(this.$textarea)
+			$main.appendChild(this.$print)
+			$shadowRoot.appendChild($main)
 
-			this.dataset.initial = this.innerHTML.trim()
+			this.dataset.initial = localStorage.document || this.innerHTML.trim()
 			this.innerHTML = ""
 
 			this.$textarea.addEventListener("input", () => {
 				this.dataset.document = encodeURIComponent(this.$textarea.value)
+				this.typedAfterSave = true
 			})
 
 			this.$textarea.addEventListener("focus", () => {
@@ -155,10 +207,34 @@ window.chainloadr("Markdot from ./markdot/markdot.js").then((Markdot) => {
 				this.$textarea.setAttribute("spellcheck", "false")
 			})
 
+			this.$textarea.addEventListener("keydown", (event) => {
+				if (navigator.platform === "MacIntel" ? event.metaKey : event.ctrlKey && event.key === "s") {
+					event.preventDefault()
+
+					this.save()
+				}
+			})
+
 			// link scroll
 			this.$textarea.addEventListener("scroll", () => {
 				this.$print.scrollTop = this.$textarea.scrollTop
 			})
+
+			setInterval(() => {
+				if (this.typedAfterSave) {
+					this.save()
+				}
+			}, 10000)
+		}
+
+		save () {
+			localStorage.document = this.dataset.document
+			this.$textarea.classList.add("saved")
+			this.typedAfterSave = false
+
+			setTimeout(() => {
+				this.$textarea.classList.remove("saved")
+			}, 1000)
 		}
 
 		/*
@@ -201,6 +277,18 @@ window.chainloadr("Markdot from ./markdot/markdot.js").then((Markdot) => {
 
 					this.$textarea.value = decoded
 					this.$print.innerHTML = new Markdot(decoded).output
+
+					{
+						const h1 = this.$print.querySelector("h1")
+
+						if (h1) {
+							this.$header.classList.remove("empty")
+							this.$header.innerHTML = h1.innerText
+						} else {
+							this.$header.classList.add("empty")
+							this.$header.innerHTML = ""
+						}
+					}
 
 					break
 				}
